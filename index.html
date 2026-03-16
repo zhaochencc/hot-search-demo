@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>热搜榜 - 实时热点</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 30px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 50px 12px 20px;
+            border: 2px solid #eee;
+            border-radius: 25px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: #e74c3c;
+        }
+
+        .search-bar button {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #e74c3c;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .search-bar button:hover {
+            background: #c0392b;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c0392b;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        /* 主内容区 */
+        .main {
+            display: grid;
+            grid-template-columns: 200px 1fr 300px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* 左侧边栏 */
+        .sidebar-left {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .category-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-list li {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .category-list li:hover {
+            background: #f5f5f5;
+        }
+
+        .category-list li.active {
+            background: #fff5f5;
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
+        .category-icon {
+            font-size: 18px;
+        }
+
+        /* 中间内容区 */
+        .content {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .hot-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .hot-icon {
+            font-size: 28px;
+        }
+
+        .hot-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .hot-subtitle {
+            color: #999;
+            font-size: 14px;
+            margin-left: auto;
+        }
+
+        .hot-list {
+            list-style: none;
+        }
+
+        .hot-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 0;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background 0.2s;
+        }
+
+        .hot-item:hover {
+            background: #fafafa;
+            margin: 0 -15px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .hot-rank {
+            width: 30px;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: #666;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .hot-rank.top-3 {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .hot-content {
+            flex: 1;
+        }
+
+        .hot-text {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .hot-item:hover .hot-text {
+            color: #e74c3c;
+        }
+
+        .hot-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .hot-tag {
+            background: #fff5f5;
+            color: #e74c3c;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* 右侧边栏 */
+        .sidebar-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .recommend-list {
+            list-style: none;
+        }
+
+        .recommend-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .recommend-item:last-child {
+            border-bottom: none;
+        }
+
+        .recommend-img {
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .recommend-info {
+            flex: 1;
+        }
+
+        .recommend-title {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 5px;
+        }
+
+        .recommend-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* 底部 */
+        .footer {
+            background: white;
+            padding: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            margin-top: 40px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .main {
+                grid-template-columns: 1fr 300px;
+            }
+            .sidebar-left {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+            .sidebar-right {
+                display: none;
+            }
+            .header {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            .search-bar {
+                order: 3;
+                max-width: 100%;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🔥</div>
+            <span>热搜榜</span>
+        </div>
+        <div class="search-bar">
+            <input type="text" placeholder="搜索热点话题...">
+            <button>🔍</button>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn btn-secondary">登录</button>
+            <button class="header-btn btn-primary">APP 下载</button>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="main">
+        <!-- 左侧边栏 -->
+        <aside class="sidebar-left">
+            <h3 class="category-title">我的订阅</h3>
+            <ul class="category-list">
+                <li class="active">
+                    <span class="category-icon">📱</span>
+                    <span>全部</span>
+                </li>
+                <li>
+                    <span class="category-icon">💻</span>
+                    <span>科技</span>
+                </li>
+                <li>
+                    <span class="category-icon">🎬</span>
+                    <span>娱乐</span>
+                </li>
+                <li>
+                    <span class="category-icon">🏟️</span>
+                    <span>体育</span>
+                </li>
+                <li>
+                    <span class="category-icon">💰</span>
+                    <span>财经</span>
+                </li>
+                <li>
+                    <span class="category-icon">🎮</span>
+                    <span>游戏</span>
+                </li>
+                <li>
+                    <span class="category-icon">🚗</span>
+                    <span>汽车</span>
+                </li>
+                <li>
+                    <span class="category-icon">🏠</span>
+                    <span>社区</span>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- 中间内容区 -->
+        <section class="content">
+            <div class="hot-header">
+                <span class="hot-icon">🔥</span>
+                <h1 class="hot-title">热搜榜</h1>
+                <span class="hot-subtitle">更新于 14:25</span>
+            </div>
+
+            <ul class="hot-list">
+                <li class="hot-item">
+                    <span class="hot-rank top-3">1</span>
+                    <div class="hot-content">
+                        <div class="hot-text">卧底成二把手的记者 315 又立功</div>
+                        <div class="hot-meta">
+                            <span class="hot-tag">热</span>
+                            <span>1,234.5 万热度</span>
+                            <span>央视新闻</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank top-3">2</span>
+                    <div class="hot-content">
+                        <div class="hot-text">只是看牙医竟然看出了"精神病"</div>
+                        <div class="hot-meta">
+                            <span class="hot-tag">新</span>
+                            <span>987.2 万热度</span>
+                            <span>健康时报</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank top-3">3</span>
+                    <div class="hot-content">
+                        <div class="hot-text">2026 年春季新品发布会汇总</div>
+                        <div class="hot-meta">
+                            <span>856.3 万热度</span>
+                            <span>科技日报</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank">4</span>
+                    <div class="hot-content">
+                        <div class="hot-text">全国多地迎来强降雨天气</div>
+                        <div class="hot-meta">
+                            <span class="hot-tag">热</span>
+                            <span>745.8 万热度</span>
+                            <span>中国天气</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank">5</span>
+                    <div class="hot-content">
+                        <div class="hot-text">最新社保政策解读来了</div>
+                        <div class="hot-meta">
+                            <span>623.4 万热度</span>
+                            <span>人民日报</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank">6</span>
+                    <div class="hot-content">
+                        <div class="hot-text">这部电影票房突破 50 亿</div>
+                        <div class="hot-meta">
+                            <span class="hot-tag">新</span>
+                            <span>512.9 万热度</span>
+                            <span>娱乐周刊</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank">7</span>
+                    <div class="hot-content">
+                        <div class="hot-text">人工智能助力医疗创新</div>
+                        <div class="hot-meta">
+                            <span>478.6 万热度</span>
+                            <span>科技前沿</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank">8</span>
+                    <div class="hot-content">
+                        <div class="hot-text">春季旅游必去的 10 个地方</div>
+                        <div class="hot-meta">
+                            <span>398.2 万热度</span>
+                            <span>旅游天地</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank">9</span>
+                    <div class="hot-content">
+                        <div class="hot-text">新能源汽车销量创新高</div>
+                        <div class="hot-meta">
+                            <span class="hot-tag">热</span>
+                            <span>356.7 万热度</span>
+                            <span>汽车周刊</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="hot-item">
+                    <span class="hot-rank">10</span>
+                    <div class="hot-content">
+                        <div class="hot-text">如何提高工作效率的 5 个技巧</div>
+                        <div class="hot-meta">
+                            <span>289.4 万热度</span>
+                            <span>职场指南</span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 右侧边栏 -->
+        <aside class="sidebar-right">
+            <div class="card">
+                <h3 class="card-title">推荐阅读</h3>
+                <ul class="recommend-list">
+                    <li class="recommend-item">
+                        <div class="recommend-img"></div>
+                        <div class="recommend-info">
+                            <div class="recommend-title">深度解析：AI 如何改变我们的生活</div>
+                            <div class="recommend-meta">科技前沿 · 15 分钟前</div>
+                        </div>
+                    </li>
+                    <li class="recommend-item">
+                        <div class="recommend-img"></div>
+                        <div class="recommend-info">
+                            <div class="recommend-title">春季养生必备知识大全</div>
+                            <div class="recommend-meta">健康时报 · 32 分钟前</div>
+                        </div>
+                    </li>
+                    <li class="recommend-item">
+                        <div class="recommend-img"></div>
+                        <div class="recommend-info">
+                            <div class="recommend-title">2026 年最值得期待的 10 部大片</div>
+                            <div class="recommend-meta">娱乐周刊 · 1 小时前</div>
+                        </div>
+                    </li>
+                    <li class="recommend-item">
+                        <div class="recommend-img"></div>
+                        <div class="recommend-info">
+                            <div class="recommend-title">投资理财入门指南</div>
+                            <div class="recommend-meta">财经日报 · 2 小时前</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">热门话题</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span class="hot-tag" style="cursor: pointer;">#315 晚会#</span>
+                    <span class="hot-tag" style="cursor: pointer;">#春季穿搭#</span>
+                    <span class="hot-tag" style="cursor: pointer;">#AI 技术#</span>
+                    <span class="hot-tag" style="cursor: pointer;">#旅游攻略#</span>
+                    <span class="hot-tag" style="cursor: pointer;">#新能源汽车#</span>
+                    <span class="hot-tag" style="cursor: pointer;">#职场技能#</span>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="footer">
+        <p>© 2026 热搜榜 - 实时热点追踪 | 此页面为演示页面</p>
+        <p style="margin-top: 10px;">数据来源：网络公开信息</p>
+    </footer>
+
+    <script>
+        // 分类切换
+        document.querySelectorAll('.category-list li').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.category-list li').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 搜索功能
+        document.querySelector('.search-bar button').addEventListener('click', function() {
+            const query = document.querySelector('.search-bar input').value;
+            if (query) {
+                alert('搜索：' + query);
+            }
+        });
+
+        document.querySelector('.search-bar input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value;
+                if (query) {
+                    alert('搜索：' + query);
+                }
+            }
+        });
+
+        // 模拟实时更新
+        setInterval(() => {
+            const timeElement = document.querySelector('.hot-subtitle');
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            timeElement.textContent = `更新于 ${timeStr}`;
+        }, 60000);
+    </script>
+</body>
+</html>
